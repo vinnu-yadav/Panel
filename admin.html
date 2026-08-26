@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arena X - Admin & Esports Platform</title>
+    
+    <meta property="og:title" content="Arena X Admin Panel" />
+    <meta property="og:description" content="Admin Dashboard for Arena X Esports Platform" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #070712;
+            --card-bg: rgba(22, 22, 42, 0.85);
+            --card-border: rgba(233, 69, 96, 0.3);
+            --primary-neon: #e94560;
+            --cyber-cyan: #00f3ff;
+            --gold: #ffd700;
+            --green-live: #2ecc71;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --insta-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 50px;
+            font-weight: 700;
+        }
+
+        /* ─── ADMIN AUTH MODAL OVERLAY ─── */
+        #authModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 7, 18, 0.96);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .auth-card {
+            background: rgba(22, 22, 42, 0.95);
+            border: 2px solid var(--primary-neon);
+            box-shadow: 0 0 35px rgba(233, 69, 96, 0.35);
+            border-radius: 18px;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .auth-card img {
+            height: 52px;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 0 10px var(--primary-neon));
+        }
+
+        .auth-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .auth-card p {
+            color: var(--text-sub);
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .auth-input-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .auth-input-group label {
+            display: block;
+            font-size: 11px;
+            color: var(--cyber-cyan);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .auth-input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(10, 10, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .auth-input-group input:focus {
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 12px rgba(233, 69, 96, 0.4);
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            background: rgba(15, 15, 30, 0.95);
+            border-bottom: 2px solid var(--primary-neon);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 5px 25px rgba(233, 69, 96, 0.2);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 19px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .logo img {
+            height: 36px;
+            filter: drop-shadow(0 0 8px var(--primary-neon));
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-links button, .switch-link {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-sub);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .nav-links button:hover, .nav-links button.active {
+            background: rgba(233, 69, 96, 0.2);
+            color: var(--primary-neon);
+            border-color: var(--primary-neon);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary-neon);
+            font-size: 18px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: var(--text-sub);
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 10, 20, 0.7);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary-neon);
+        }
+
+        .btn-action {
+            background: var(--primary-neon);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+
+        .btn-action:hover {
+            background: #c73e54;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 243, 255, 0.15);
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+        }
+
+        .btn-secondary:hover {
+            background: var(--cyber-cyan);
+            color: #000;
+        }
+
+        .btn-green {
+            background: var(--green-live);
+            color: #fff;
+        }
+
+        .btn-green:hover {
+            background: #27ae60;
+        }
+
+        .btn-gold {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            font-size: 12px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .data-table th {
+            color: var(--cyber-cyan);
+            text-transform: uppercase;
+            font-size: 11px;
+            background: rgba(10, 10, 20, 0.6);
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .badge-upcoming { background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid #3498db; }
+        .badge-live { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .badge-completed { background: rgba(149, 165, 166, 0.2); color: #95a5a6; border: 1px solid #7f8c8d; }
+        .badge-pending { background: rgba(255, 215, 0, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+        .badge-approved { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .badge-rejected { background: rgba(233, 69, 96, 0.2); color: var(--primary-neon); border: 1px solid var(--primary-neon); }
+
+        .hidden { display: none !important; }
+
+        .banner-preview-card {
+            background: #090918;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            margin-top: 14px;
+            position: relative;
+            height: 140px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .banner-preview-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .banner-preview-content {
+            position: relative;
+            z-index: 2;
+            padding: 12px 16px;
+            background: linear-gradient(to top, rgba(6, 6, 15, 0.95), transparent);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .insta-chip {
+            background: var(--insta-gradient);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 5px 9px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+        }
+
+        @media (max-width: 768px) {
+            .data-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════ ADMIN LOGIN GATEWAY ═══════════ -->
+    <div id="authModal">
+        <div class="auth-card">
+            <img src="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" alt="Arena X" />
+            <h2>ADMIN PORTAL</h2>
+            <p>Enter your administrator credentials to access the master control panel.</p>
+
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="auth-input-group">
+                    <label>Admin Email</label>
+                    <input type="email" id="adminEmail" placeholder="vinayytmadduri@gmail.com" required autocomplete="username" />
+                </div>
+                <div class="auth-input-group">
+                    <label>Password</label>
+                    <input type="password" id="adminPassword" placeholder="••••••••" required autocomplete="current-password" />
+                </div>
+                <button type="submit" class="btn-action" id="btnAdminLogin" style="width: 100%; padding: 12px; margin-top: 8px;">
+                    AUTHENTICATE AS ADMIN ➔
+                </button>
+            </form>
+            <div id="authError" style="color: var(--primary-neon); font-size: 12px; margin-top: 12px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ ADMIN DASHBOARD CONTENT ═══════════ -->
+    <div class="topbar">
+        <div class="logo">
+            <img src="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" alt="Arena X" />
+            <span>ARENA X ADMIN</span>
+        </div>
+        <div class="nav-links">
+            <button class="active" onclick="switchAdminTab('tournaments')" id="tabTournaments">🏆 Tournaments</button>
+            <button onclick="switchAdminTab('banners')" id="tabBanners">📢 Announcement Banners</button>
+            <button onclick="switchAdminTab('withdrawals')" id="tabWithdrawals">💸 Withdrawals</button>
+            <button onclick="switchAdminTab('users')" id="tabUsers">👥 Users</button>
+            <a href="index.html" class="switch-link" style="color: var(--cyber-cyan); border-color: var(--cyber-cyan);">🎮 View Player Platform ↗</a>
+            <button onclick="adminLogout()" style="background: rgba(233, 69, 96, 0.2); color: var(--primary-neon); border-color: var(--primary-neon);">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- ═══════════ TOURNAMENTS SECTION ═══════════ -->
+        <div id="secTournaments">
+            <div class="card">
+                <h2>
+                    <span id="tournamentFormTitle">➕ Create New Tournament</span>
+                    <button class="btn-action btn-secondary" onclick="resetTournamentForm()">Clear Form</button>
+                </h2>
+                <input type="hidden" id="editTournamentId" value="" />
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Game Title</label>
+                        <select id="tGame">
+                            <option value="Free Fire">Free Fire</option>
+                            <option value="BGMI">BGMI</option>
+                            <option value="COD Mobile">COD Mobile</option>
+                            <option value="PUBG Mobile">PUBG Mobile</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tournament Mode</label>
+                        <select id="tType">
+                            <option value="1v1">1v1 Duel</option>
+                            <option value="2v2">2v2 Duo Clash</option>
+                            <option value="3v3">3v3 Trio Clash</option>
+                            <option value="4v4">4v4 Clash Squad</option>
+                            <option value="5v5">5v5 Battle</option>
+                            <option value="6v6">6v6 Mega Clash</option>
+                            <option value="tdm">TDM 4v4 (BGMI)</option>
+                            <option value="solo">Solo Battle Royale</option>
+                            <option value="squad">Squad Battle Royale</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tournament Name</label>
+                        <input type="text" id="tName" placeholder="e.g. Free Fire 1v1 Night Cup" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Prize Pool (₹)</label>
+                        <input type="number" id="tPrize" placeholder="e.g. 100" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Entry Fee (₹)</label>
+                        <input type="number" id="tEntry" placeholder="e.g. 20" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Max Players (Slots)</label>
+                        <input type="number" id="tMaxPlayers" placeholder="e.g. 2 for 1v1, 48 for BR" value="2" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date & Time String</label>
+                        <input type="text" id="tDateTime" placeholder="e.g. Tonight at 9:00 PM" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="tStatus">
+                            <option value="upcoming">Upcoming</option>
+                            <option value="live">Live Now</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Room ID / Match Code</label>
+                        <input type="text" id="tRoomUid" placeholder="e.g. 8492019" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Room Password</label>
+                        <input type="text" id="tRoomPassword" placeholder="e.g. 1234" />
+                    </div>
+                </div>
+
+                <button class="btn-action" id="btnSaveTournament" onclick="saveTournament()">Publish Tournament</button>
+            </div>
+
+            <!-- Existing Tournaments Table -->
+            <div class="card">
+                <h2>🏆 Active & Past Tournaments</h2>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Game</th>
+                                <th>Mode</th>
+                                <th>Prize</th>
+                                <th>Fee</th>
+                                <th>Joined</th>
+                                <th>Status</th>
+                                <th>Room ID / Pass</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tournamentsTableBody">
+                            <tr><td colspan="9" style="text-align: center; color: var(--text-sub);">Loading tournaments...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ ANNOUNCEMENT BANNERS SECTION ═══════════ -->
+        <div id="secBanners" class="hidden">
+            <div class="card">
+                <h2>
+                    <span id="bannerFormTitle">📢 Create Announcement Banner</span>
+                    <button class="btn-action btn-gold" onclick="seedDefaultBanners()">⚡ Seed Default Banners</button>
+                </h2>
+                <input type="hidden" id="editBannerId" value="" />
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Banner Title</label>
+                        <input type="text" id="bTitle" placeholder="e.g. FREE FIRE MEGA DUELS" oninput="updateBannerPreview()" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tag / Badge</label>
+                        <input type="text" id="bTag" placeholder="e.g. 🔥 1v1 & SQUAD MATCHES" oninput="updateBannerPreview()" />
+                    </div>
+                    <div class="form-group">
+                        <label>Action Button Text</label>
+                        <input type="text" id="bBtnText" placeholder="e.g. Join Match ↗" oninput="updateBannerPreview()" />
+                    </div>
+                    <div class="form-group">
+                        <label>Redirect URL / Instagram</label>
+                        <input type="url" id="bActionUrl" placeholder="https://www.instagram.com/_arena_x_" />
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Background Image URL</label>
+                        <input type="url" id="bImageUrl" placeholder="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200" oninput="updateBannerPreview()" />
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Description</label>
+                        <textarea id="bDesc" rows="2" placeholder="Compete in daily Free Fire custom room matches and win instant cash prizes!" oninput="updateBannerPreview()"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Banner Active Status</label>
+                        <select id="bActive">
+                            <option value="true">Active (Visible to Players)</option>
+                            <option value="false">Inactive (Hidden)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Live Banner Preview -->
+                <label style="font-size: 11px; color: var(--cyber-cyan); text-transform: uppercase;">Live Carousel Preview:</label>
+                <div class="banner-preview-card" id="bannerLivePreview">
+                    <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200" id="previewImg" class="banner-preview-img" alt="Preview" />
+                    <div class="banner-preview-content">
+                        <div>
+                            <span class="badge badge-rejected" id="previewTag" style="margin-bottom: 4px;">🔥 1v1 & SQUAD MATCHES</span>
+                            <h3 id="previewTitle" style="font-family: 'Orbitron', sans-serif; font-size: 15px; color: #fff;">FREE FIRE MEGA DUELS</h3>
+                            <p id="previewDesc" style="font-size: 11px; color: #cbd5e1;">Compete in daily Free Fire custom room matches and win instant cash prizes!</p>
+                        </div>
+                        <div>
+                            <button class="btn-action btn-secondary" id="previewBtn">Join Match ↗</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px; display: flex; gap: 8px;">
+                    <button class="btn-action" id="btnSaveBanner" onclick="saveBanner()">Save Banner</button>
+                    <button class="btn-action btn-secondary" onclick="resetBannerForm()">Reset</button>
+                </div>
+            </div>
+
+            <!-- Banners Table -->
+            <div class="card">
+                <h2>📢 All Active & Inactive Banners</h2>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Preview</th>
+                                <th>Tag & Title</th>
+                                <th>Button / Link</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bannersTableBody">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-sub);">Loading banners...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ WITHDRAWALS SECTION ═══════════ -->
+        <div id="secWithdrawals" class="hidden">
+            <div class="card">
+                <h2>💸 Withdrawal Requests</h2>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Instagram Profile</th>
+                                <th>UPI ID</th>
+                                <th>Amount</th>
+                                <th>Date Requested</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawalsTableBody">
+                            <tr><td colspan="7" style="text-align: center; color: var(--text-sub);">Loading withdrawal requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ USERS SECTION ═══════════ -->
+        <div id="secUsers" class="hidden">
+            <div class="card">
+                <h2>👥 Registered Players Database</h2>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Player Name</th>
+                                <th>Email</th>
+                                <th>Instagram Link</th>
+                                <th>UPI ID</th>
+                                <th>Bonus</th>
+                                <th>Deposited</th>
+                                <th>Total Wallet</th>
+                                <th>Manage Funds</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="8" style="text-align: center; color: var(--text-sub);">Loading registered users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════ JAVASCRIPT LOGIC ═══════════ -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwqjgRRtZC9RJ34m-g5r0TBOx4G7AMDjc",
+            authDomain: "tournament-a7659.firebaseapp.com",
+            databaseURL: "https://tournament-a7659-default-rtdb.firebaseio.com",
+            projectId: "tournament-a7659",
+            storageBucket: "tournament-a7659.firebasestorage.app",
+            messagingSenderId: "458496922243",
+            appId: "1:458496922243:web:2aeb4b04bc9676e44a01b6",
+            measurementId: "G-FK9L8N9WSD"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let tournamentsData = {}, bannersData = {}, usersData = {}, withdrawalsData = {};
+        const ADMIN_EMAILS = ['vinayytmadduri@gmail.com', 'admin@arenax.com'];
+
+        // ─── AUTH STATE LISTENER ───
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Check if admin email or admin role
+                const isEmailAdmin = ADMIN_EMAILS.includes((user.email || '').toLowerCase());
+                
+                db.ref('users/' + user.uid + '/role').once('value').then(snap => {
+                    const role = snap.val();
+                    if (isEmailAdmin || role === 'admin') {
+                        document.getElementById('authModal').classList.add('hidden');
+                        initAdminDataListeners();
+                    } else {
+                        document.getElementById('authError').textContent = 'Access Denied: Account ' + user.email + ' is not an authorized administrator.';
+                        document.getElementById('authError').style.display = 'block';
+                        document.getElementById('authModal').classList.remove('hidden');
+                        auth.signOut();
+                    }
+                }).catch(() => {
+                    if (isEmailAdmin) {
+                        document.getElementById('authModal').classList.add('hidden');
+                        initAdminDataListeners();
+                    }
+                });
+            } else {
+                document.getElementById('authModal').classList.remove('hidden');
+            }
+        });
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value.trim();
+            const pass = document.getElementById('adminPassword').value;
+            const btn = document.getElementById('btnAdminLogin');
+            const errDiv = document.getElementById('authError');
+
+            btn.textContent = 'AUTHENTICATING...';
+            btn.disabled = true;
+            errDiv.style.display = 'none';
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(cred => {
+                    btn.textContent = 'AUTHENTICATE AS ADMIN ➔';
+                    btn.disabled = false;
+                })
+                .catch(err => {
+                    btn.textContent = 'AUTHENTICATE AS ADMIN ➔';
+                    btn.disabled = false;
+                    errDiv.textContent = 'Login Failed: ' + err.message;
+                    errDiv.style.display = 'block';
+                });
+        }
+
+        function adminLogout() {
+            if (confirm('Log out from Admin Panel?')) {
+                auth.signOut().then(() => {
+                    window.location.reload();
+                });
+            }
+        }
+
+        function initAdminDataListeners() {
+            // 1. Tournaments
+            db.ref('tournaments').on('value', snap => {
+                tournamentsData = snap.val() || {};
+                renderTournamentsTable();
+            });
+
+            // 2. Banners
+            db.ref('banners').on('value', snap => {
+                bannersData = snap.val() || {};
+                renderBannersTable();
+            });
+
+            // 3. Withdrawals
+            db.ref('withdrawals').on('value', snap => {
+                withdrawalsData = snap.val() || {};
+                renderWithdrawalsTable();
+            });
+
+            // 4. Users
+            db.ref('users').on('value', snap => {
+                usersData = snap.val() || {};
+                renderUsersTable();
+            });
+        }
+
+        function switchAdminTab(tab) {
+            document.getElementById('secTournaments').classList.add('hidden');
+            document.getElementById('secBanners').classList.add('hidden');
+            document.getElementById('secWithdrawals').classList.add('hidden');
+            document.getElementById('secUsers').classList.add('hidden');
+
+            document.getElementById('tabTournaments').classList.remove('active');
+            document.getElementById('tabBanners').classList.remove('active');
+            document.getElementById('tabWithdrawals').classList.remove('active');
+            document.getElementById('tabUsers').classList.remove('active');
+
+            if (tab === 'tournaments') {
+                document.getElementById('secTournaments').classList.remove('hidden');
+                document.getElementById('tabTournaments').classList.add('active');
+            } else if (tab === 'banners') {
+                document.getElementById('secBanners').classList.remove('hidden');
+                document.getElementById('tabBanners').classList.add('active');
+            } else if (tab === 'withdrawals') {
+                document.getElementById('secWithdrawals').classList.remove('hidden');
+                document.getElementById('tabWithdrawals').classList.add('active');
+            } else if (tab === 'users') {
+                document.getElementById('secUsers').classList.remove('hidden');
+                document.getElementById('tabUsers').classList.add('active');
+            }
+        }
+
+        // ─── 1. TOURNAMENTS MANAGEMENT ───
+        function renderTournamentsTable() {
+            const tbody = document.getElementById('tournamentsTableBody');
+            let html = '';
+
+            const keys = Object.keys(tournamentsData).sort((a, b) => (tournamentsData[b].createdAt || 0) - (tournamentsData[a].createdAt || 0));
+
+            keys.forEach(id => {
+                const t = tournamentsData[id];
+                let joinedCount = 0;
+                if (t.participants) {
+                    Object.values(t.participants).forEach(p => {
+                        if (p.players && Array.isArray(p.players)) joinedCount += p.players.length;
+                        else joinedCount += 1;
+                    });
+                }
+
+                html += `
+                    <tr>
+                        <td><strong style="color: #fff;">${t.name}</strong></td>
+                        <td><span class="badge badge-upcoming">${t.game}</span></td>
+                        <td><span style="color: var(--cyber-cyan); text-transform: uppercase;">${t.type}</span></td>
+                        <td style="color: var(--gold); font-weight: 800;">₹${t.prizePool}</td>
+                        <td>₹${t.entryFee}</td>
+                        <td>${joinedCount}/${t.maxPlayers || 100}</td>
+                        <td><span class="badge badge-${t.status}">${t.status}</span></td>
+                        <td><span style="font-size:11px; color:#cbd5e1;">ID: ${t.roomUid || '-'} | Pass: ${t.roomPassword || '-'}</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-action btn-secondary" onclick="editTournament('${id}')">Edit</button>
+                                <button class="btn-sm btn-action" style="background:#e11d48;" onclick="deleteTournament('${id}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">No tournaments found</td></tr>';
+        }
+
+        function saveTournament() {
+            const id = document.getElementById('editTournamentId').value.trim() || db.ref('tournaments').push().key;
+            const data = {
+                game: document.getElementById('tGame').value,
+                type: document.getElementById('tType').value,
+                name: document.getElementById('tName').value.trim(),
+                prizePool: parseInt(document.getElementById('tPrize').value) || 0,
+                entryFee: parseInt(document.getElementById('tEntry').value) || 0,
+                maxPlayers: parseInt(document.getElementById('tMaxPlayers').value) || 100,
+                dateTime: document.getElementById('tDateTime').value.trim() || 'TBD',
+                status: document.getElementById('tStatus').value,
+                roomUid: document.getElementById('tRoomUid').value.trim(),
+                roomPassword: document.getElementById('tRoomPassword').value.trim(),
+                createdAt: Date.now()
+            };
+
+            if (!data.name) {
+                alert('Please enter a tournament name');
+                return;
+            }
+
+            db.ref('tournaments/' + id).update(data)
+                .then(() => {
+                    alert('Tournament saved successfully!');
+                    resetTournamentForm();
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+
+        function editTournament(id) {
+            const t = tournamentsData[id];
+            if (!t) return;
+
+            document.getElementById('editTournamentId').value = id;
+            document.getElementById('tGame').value = t.game;
+            document.getElementById('tType').value = t.type;
+            document.getElementById('tName').value = t.name;
+            document.getElementById('tPrize').value = t.prizePool;
+            document.getElementById('tEntry').value = t.entryFee;
+            document.getElementById('tMaxPlayers').value = t.maxPlayers || 2;
+            document.getElementById('tDateTime').value = t.dateTime;
+            document.getElementById('tStatus').value = t.status;
+            document.getElementById('tRoomUid').value = t.roomUid || '';
+            document.getElementById('tRoomPassword').value = t.roomPassword || '';
+
+            document.getElementById('tournamentFormTitle').textContent = '✏️ Edit Tournament: ' + t.name;
+            document.getElementById('btnSaveTournament').textContent = 'Update Tournament';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteTournament(id) {
+            if (!confirm('Are you sure you want to delete this tournament?')) return;
+            db.ref('tournaments/' + id).remove().catch(err => alert(err.message));
+        }
+
+        function resetTournamentForm() {
+            document.getElementById('editTournamentId').value = '';
+            document.getElementById('tName').value = '';
+            document.getElementById('tPrize').value = '';
+            document.getElementById('tEntry').value = '';
+            document.getElementById('tDateTime').value = '';
+            document.getElementById('tRoomUid').value = '';
+            document.getElementById('tRoomPassword').value = '';
+            document.getElementById('tournamentFormTitle').textContent = '➕ Create New Tournament';
+            document.getElementById('btnSaveTournament').textContent = 'Publish Tournament';
+        }
+
+        // ─── 2. ANNOUNCEMENT BANNERS MANAGEMENT ───
+        function updateBannerPreview() {
+            document.getElementById('previewTitle').textContent = document.getElementById('bTitle').value.trim() || 'BANNER TITLE';
+            document.getElementById('previewTag').textContent = document.getElementById('bTag').value.trim() || '🔥 TAG';
+            document.getElementById('previewDesc').textContent = document.getElementById('bDesc').value.trim() || 'Banner description text goes here.';
+            document.getElementById('previewBtn').textContent = document.getElementById('bBtnText').value.trim() || 'Join Match ↗';
+            const imgUrl = document.getElementById('bImageUrl').value.trim() || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200';
+            document.getElementById('previewImg').src = imgUrl;
+        }
+
+        function renderBannersTable() {
+            const tbody = document.getElementById('bannersTableBody');
+            let html = '';
+
+            const keys = Object.keys(bannersData).sort((a, b) => (bannersData[b].createdAt || 0) - (bannersData[a].createdAt || 0));
+
+            keys.forEach(id => {
+                const b = bannersData[id];
+                const isActive = b.active !== false && b.active !== 'false';
+                html += `
+                    <tr>
+                        <td><img src="${b.imageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200'}" style="width: 80px; height: 45px; object-fit: cover; border-radius: 6px;" /></td>
+                        <td>
+                            <span class="badge badge-rejected" style="margin-bottom: 2px;">${b.tag || 'ANNOUNCEMENT'}</span><br>
+                            <strong style="color: #fff;">${b.title || 'Untitled'}</strong>
+                        </td>
+                        <td>
+                            <a href="${b.actionUrl || '#'}" target="_blank" style="color: var(--cyber-cyan); text-decoration: none;">${b.btnText || 'Join ↗'}</a>
+                        </td>
+                        <td><span class="badge ${isActive ? 'badge-approved' : 'badge-completed'}">${isActive ? 'Active' : 'Hidden'}</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-action btn-secondary" onclick="editBanner('${id}')">Edit</button>
+                                <button class="btn-sm btn-action" style="background:#e11d48;" onclick="deleteBanner('${id}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align: center; color: var(--text-sub);">No banners found. Click "Seed Default Banners" to add presets.</td></tr>';
+        }
+
+        function saveBanner() {
+            const id = document.getElementById('editBannerId').value.trim() || db.ref('banners').push().key;
+            const data = {
+                title: document.getElementById('bTitle').value.trim() || 'ARENA X TOURNAMENT',
+                tag: document.getElementById('bTag').value.trim() || '🔥 TOURNAMENT',
+                btnText: document.getElementById('bBtnText').value.trim() || 'Join Match ↗',
+                actionUrl: document.getElementById('bActionUrl').value.trim() || 'https://www.instagram.com/_arena_x_',
+                imageUrl: document.getElementById('bImageUrl').value.trim() || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200',
+                description: document.getElementById('bDesc').value.trim() || '',
+                active: document.getElementById('bActive').value === 'true',
+                createdAt: Date.now()
+            };
+
+            db.ref('banners/' + id).update(data)
+                .then(() => {
+                    alert('Announcement Banner saved successfully!');
+                    resetBannerForm();
+                })
+                .catch(err => alert(err.message));
+        }
+
+        function editBanner(id) {
+            const b = bannersData[id];
+            if (!b) return;
+
+            document.getElementById('editBannerId').value = id;
+            document.getElementById('bTitle').value = b.title || '';
+            document.getElementById('bTag').value = b.tag || '';
+            document.getElementById('bBtnText').value = b.btnText || '';
+            document.getElementById('bActionUrl').value = b.actionUrl || '';
+            document.getElementById('bImageUrl').value = b.imageUrl || '';
+            document.getElementById('bDesc').value = b.description || '';
+            document.getElementById('bActive').value = b.active !== false ? 'true' : 'false';
+
+            document.getElementById('bannerFormTitle').textContent = '✏️ Edit Banner: ' + b.title;
+            document.getElementById('btnSaveBanner').textContent = 'Update Banner';
+            updateBannerPreview();
+        }
+
+        function deleteBanner(id) {
+            if (!confirm('Are you sure you want to delete this banner?')) return;
+            db.ref('banners/' + id).remove().catch(err => alert(err.message));
+        }
+
+        function resetBannerForm() {
+            document.getElementById('editBannerId').value = '';
+            document.getElementById('bTitle').value = '';
+            document.getElementById('bTag').value = '';
+            document.getElementById('bBtnText').value = '';
+            document.getElementById('bActionUrl').value = '';
+            document.getElementById('bImageUrl').value = '';
+            document.getElementById('bDesc').value = '';
+            document.getElementById('bannerFormTitle').textContent = '📢 Create Announcement Banner';
+            document.getElementById('btnSaveBanner').textContent = 'Save Banner';
+            updateBannerPreview();
+        }
+
+        function seedDefaultBanners() {
+            if (!confirm('Add 3 default tournament banners into the database?')) return;
+            const presets = [
+                {
+                    title: 'FREE FIRE MEGA DUELS',
+                    tag: '🔥 1v1 & SQUAD MATCHES',
+                    description: 'Compete in daily Free Fire custom room matches and win instant cash prizes!',
+                    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200',
+                    btnText: 'Join Match ↗',
+                    actionUrl: 'https://www.instagram.com/_arena_x_',
+                    active: true,
+                    createdAt: Date.now()
+                },
+                {
+                    title: 'BGMI PRO CLASH CUP',
+                    tag: '🎯 TDM & CLASSIC BATTLE',
+                    description: 'Daily BGMI tournaments with real-time room credentials and verified winners.',
+                    imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200',
+                    btnText: 'Register ↗',
+                    actionUrl: 'https://www.instagram.com/_arena_x_',
+                    active: true,
+                    createdAt: Date.now() - 1000
+                },
+                {
+                    title: '₹30 FREE WELCOME BONUS',
+                    tag: '🎁 CLAIM BONUS',
+                    description: 'Every newly registered player receives ₹30 bonus cash to enter tournaments instantly!',
+                    imageUrl: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?q=80&w=1200',
+                    btnText: 'Claim Now ↗',
+                    actionUrl: 'https://www.instagram.com/_arena_x_',
+                    active: true,
+                    createdAt: Date.now() - 2000
+                }
+            ];
+
+            const updates = {};
+            presets.forEach(p => {
+                const newKey = db.ref('banners').push().key;
+                updates['banners/' + newKey] = p;
+            });
+
+            db.ref().update(updates).then(() => alert('Preset banners added!'));
+        }
+
+        // ─── 3. WITHDRAWALS MANAGEMENT ───
+        function renderWithdrawalsTable() {
+            const tbody = document.getElementById('withdrawalsTableBody');
+            let html = '';
+            const keys = Object.keys(withdrawalsData).sort((a, b) => (withdrawalsData[b].requestedAt || 0) - (withdrawalsData[a].requestedAt || 0));
+
+            keys.forEach(id => {
+                const w = withdrawalsData[id];
+                const date = new Date(w.requestedAt || Date.now()).toLocaleString();
+                const isPending = w.status === 'pending';
+
+                html += `
+                    <tr>
+                        <td>
+                            <strong style="color: #fff;">${w.userName || 'Gamer'}</strong><br>
+                            <span style="font-size:10.5px; color:var(--text-sub);">${w.userEmail || ''}</span>
+                        </td>
+                        <td>
+                            ${w.instagramLink ? `<a href="${w.instagramLink}" target="_blank" class="insta-chip">Instagram Profile ↗</a>` : '<span style="color:#64748b;">Not Provided</span>'}
+                        </td>
+                        <td><span style="color: var(--cyber-cyan); font-weight: 800;">${w.upiId || '-'}</span></td>
+                        <td style="color: var(--green-live); font-size: 14px; font-weight: 800;">₹${w.amount}</td>
+                        <td style="font-size: 11px; color: var(--text-sub);">${date}</td>
+                        <td><span class="badge badge-${w.status}">${w.status}</span></td>
+                        <td>
+                            ${isPending ? `
+                                <div class="action-btns">
+                                    <button class="btn-sm btn-action btn-green" onclick="approveWithdrawal('${id}')">Approve & Paid</button>
+                                    <button class="btn-sm btn-action" style="background:#e11d48;" onclick="rejectWithdrawal('${id}')">Reject & Refund</button>
+                                </div>
+                            ` : '<span style="color:var(--text-sub); font-size:11px;">Processed</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="7" style="text-align: center; color: var(--text-sub);">No withdrawal requests</td></tr>';
+        }
+
+        function approveWithdrawal(id) {
+            if (!confirm('Mark withdrawal as APPROVED and PAID?')) return;
+            db.ref('withdrawals/' + id).update({
+                status: 'approved',
+                approvedAt: Date.now()
+            }).then(() => alert('Withdrawal approved.'));
+        }
+
+        function rejectWithdrawal(id) {
+            if (!confirm('Reject withdrawal and refund amount to player wallet?')) return;
+            db.ref('withdrawals/' + id).update({
+                status: 'rejected',
+                refunded: false,
+                rejectedAt: Date.now()
+            }).then(() => alert('Withdrawal rejected. Refund scheduled.'));
+        }
+
+        // ─── 4. USERS MANAGEMENT ───
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            let html = '';
+
+            Object.keys(usersData).forEach(uid => {
+                const u = usersData[uid];
+                const wallet = u.wallet || { bonus: 0, deposited: 0 };
+                const total = (wallet.bonus || 0) + (wallet.deposited || 0);
+
+                html += `
+                    <tr>
+                        <td><strong style="color: #fff;">${u.name || 'Gamer'}</strong></td>
+                        <td style="font-size: 11px; color: var(--text-sub);">${u.email || '-'}</td>
+                        <td>
+                            ${u.instagramLink ? `<a href="${u.instagramLink}" target="_blank" class="insta-chip">Instagram ↗</a>` : '<span style="color:#64748b;">Not Linked</span>'}
+                        </td>
+                        <td><span style="color: var(--cyber-cyan);">${u.upiId || 'Not set'}</span></td>
+                        <td style="color: var(--gold);">₹${wallet.bonus || 0}</td>
+                        <td style="color: var(--green-live);">₹${wallet.deposited || 0}</td>
+                        <td><strong style="color: var(--primary-neon);">₹${total}</strong></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-action btn-green" onclick="adjustUserWallet('${uid}', 'add')">+ Add Cash</button>
+                                <button class="btn-sm btn-action" style="background:#e11d48;" onclick="adjustUserWallet('${uid}', 'deduct')">- Deduct</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">No registered players</td></tr>';
+        }
+
+        function adjustUserWallet(uid, action) {
+            const u = usersData[uid];
+            if (!u) return;
+            const amtStr = prompt(`Enter amount in ₹ to ${action.toUpperCase()} for ${u.name || 'player'}:`, '50');
+            const amt = parseInt(amtStr);
+            if (!amt || isNaN(amt) || amt <= 0) return;
+
+            const curWallet = u.wallet || { bonus: 0, deposited: 0 };
+            const newDeposited = action === 'add' ? (curWallet.deposited || 0) + amt : Math.max(0, (curWallet.deposited || 0) - amt);
+
+            const txId = db.ref().push().key;
+            const updates = {};
+            updates['users/' + uid + '/wallet/deposited'] = newDeposited;
+            updates['transactions/' + txId] = {
+                userId: uid,
+                userName: u.name || 'Gamer',
+                amount: action === 'add' ? amt : -amt,
+                type: 'admin_adjust',
+                description: `Admin manual wallet ${action === 'add' ? 'credit' : 'debit'} (₹${amt})`,
+                timestamp: Date.now()
+            };
+
+            db.ref().update(updates).then(() => alert(`Wallet updated for ${u.name}`));
+        }
+    </script>
+</body>
+</html>
