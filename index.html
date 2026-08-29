@@ -404,8 +404,8 @@
         .rank-ace { color: #ff0055; border-color: #ff0055; background: rgba(255, 0, 85, 0.25); text-shadow: 0 0 6px #ff0055; }
         .rank-conqueror { color: #ffaa00; border-color: #ffaa00; background: linear-gradient(45deg, rgba(255,170,0,0.3), rgba(233,69,96,0.3)); text-shadow: 0 0 8px #ffaa00; }
 
-        /* ─── RANK SELECT MODAL ─── */
-        #rankModal {
+        /* ─── MODALS ─── */
+        #rankModal, #playersModal {
             position: fixed;
             inset: 0;
             background: rgba(7, 7, 18, 0.88);
@@ -417,25 +417,37 @@
             padding: 16px;
         }
 
-        .rank-modal-card {
+        .rank-modal-card, .players-modal-card {
             background: rgba(22, 22, 42, 0.98);
             border: 2px solid var(--gold);
             box-shadow: 0 0 35px rgba(255, 215, 0, 0.35);
             border-radius: 18px;
             padding: 24px;
             width: 100%;
-            max-width: 440px;
+            max-width: 520px;
             text-align: center;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .rank-modal-card h3 {
+        .players-modal-card {
+            border-color: var(--cyber-cyan);
+            box-shadow: 0 0 35px rgba(0, 243, 255, 0.35);
+        }
+
+        .rank-modal-card h3, .players-modal-card h3 {
             font-family: 'Orbitron', sans-serif;
             color: var(--gold);
             font-size: 16px;
             margin-bottom: 6px;
         }
 
-        .rank-modal-card p {
+        .players-modal-card h3 {
+            color: var(--cyber-cyan);
+        }
+
+        .rank-modal-card p, .players-modal-card p {
             font-size: 12px;
             color: var(--text-sub);
             margin-bottom: 18px;
@@ -465,6 +477,34 @@
             border-color: var(--gold);
             background: rgba(255, 215, 0, 0.18);
             transform: scale(1.03);
+        }
+
+        .players-list-scroll {
+            overflow-y: auto;
+            max-height: 50vh;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .player-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 25, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .ign-badge {
+            background: rgba(0, 243, 255, 0.15);
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 800;
         }
 
         @media (max-width: 768px) {
@@ -519,6 +559,22 @@
             <div style="display: flex; gap: 8px;">
                 <button class="btn-action btn-secondary" style="flex: 1;" onclick="closeRankModal()">Cancel</button>
                 <button class="btn-action btn-gold" style="flex: 1;" onclick="customRankPrompt()">Custom Rank ✏️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ JOINED PLAYERS (IGN & UID) MODAL ═══════════ -->
+    <div id="playersModal" class="hidden">
+        <div class="players-modal-card">
+            <h3 id="playersModalTitle">🎮 JOINED PLAYERS (IGN)</h3>
+            <p id="playersModalSubtitle">List of all registered players and their in-game names (IGN) & numeric UIDs.</p>
+            
+            <div class="players-list-scroll" id="playersListContent">
+                <!-- Players will be rendered here -->
+            </div>
+
+            <div>
+                <button class="btn-action btn-secondary" style="width: 100%;" onclick="closePlayersModal()">Close</button>
             </div>
         </div>
     </div>
@@ -810,43 +866,43 @@
 
         let tournamentsData = {}, bannersData = {}, usersData = {}, withdrawalsData = {};
 
-// ─── AUTH STATE LISTENER (PURE DATABASE ROLE CHECK) ───
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        try {
-            // 1. Fetch user data directly from Firebase Database: users/{uid}
-            const snap = await db.ref('users/' + user.uid).once('value');
-            const userData = snap.val() || {};
-            
-            // 2. Check if role is 'admin' (case-insensitive) or isAdmin is true
-            const role = String(userData.role || '').toLowerCase().trim();
-            const isAdmin = role === 'admin' || userData.isAdmin === true;
+        // ─── AUTH STATE LISTENER (PURE DATABASE ROLE CHECK) ───
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    // 1. Fetch user data directly from Firebase Database: users/{uid}
+                    const snap = await db.ref('users/' + user.uid).once('value');
+                    const userData = snap.val() || {};
+                    
+                    // 2. Check if role is 'admin' (case-insensitive) or isAdmin is true
+                    const role = String(userData.role || '').toLowerCase().trim();
+                    const isAdmin = role === 'admin' || userData.isAdmin === true;
 
-            if (isAdmin) {
-                // Access Granted based purely on database record
-                document.getElementById('authModal').classList.add('hidden');
-                initAdminDataListeners();
+                    if (isAdmin) {
+                        // Access Granted based purely on database record
+                        document.getElementById('authModal').classList.add('hidden');
+                        initAdminDataListeners();
+                    } else {
+                        // Access Denied: not an admin in database
+                        const errDiv = document.getElementById('authError');
+                        errDiv.textContent = 'Access Denied: Account ' + user.email + ' does not have role="admin" in database.';
+                        errDiv.style.display = 'block';
+                        document.getElementById('authModal').classList.remove('hidden');
+                        auth.signOut();
+                    }
+                } catch (err) {
+                    console.error('Database role check failed:', err);
+                    const errDiv = document.getElementById('authError');
+                    errDiv.textContent = 'Access Denied: ' + err.message;
+                    errDiv.style.display = 'block';
+                    document.getElementById('authModal').classList.remove('hidden');
+                    auth.signOut();
+                }
             } else {
-                // Access Denied: not an admin in database
-                const errDiv = document.getElementById('authError');
-                errDiv.textContent = 'Access Denied: Account ' + user.email + ' does not have role="admin" in database.';
-                errDiv.style.display = 'block';
                 document.getElementById('authModal').classList.remove('hidden');
-                auth.signOut();
             }
-        } catch (err) {
-            console.error('Database role check failed:', err);
-            const errDiv = document.getElementById('authError');
-            errDiv.textContent = 'Access Denied: ' + err.message;
-            errDiv.style.display = 'block';
-            document.getElementById('authModal').classList.remove('hidden');
-            auth.signOut();
-        }
-    } else {
-        document.getElementById('authModal').classList.remove('hidden');
-    }
-});
-      
+        });
+
         function handleAdminLogin(e) {
             e.preventDefault();
             const email = document.getElementById('adminEmail').value.trim();
@@ -955,7 +1011,11 @@ auth.onAuthStateChanged(async (user) => {
                         <td><span style="color: var(--cyber-cyan); text-transform: uppercase;">${t.type}</span></td>
                         <td style="color: var(--gold); font-weight: 800;">₹${t.prizePool}</td>
                         <td>₹${t.entryFee}</td>
-                        <td>${joinedCount}/${t.maxPlayers || 100}</td>
+                        <td>
+                            <button class="btn-sm btn-action btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="viewJoinedPlayers('${id}')">
+                                👥 ${joinedCount}/${t.maxPlayers || 100} Players (IGN) 👁️
+                            </button>
+                        </td>
                         <td><span class="badge badge-${t.status}">${t.status}</span></td>
                         <td><span style="font-size:11px; color:#cbd5e1;">ID: ${t.roomUid || '-'} | Pass: ${t.roomPassword || '-'}</span></td>
                         <td>
@@ -969,6 +1029,75 @@ auth.onAuthStateChanged(async (user) => {
             });
 
             tbody.innerHTML = html || '<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">No tournaments found</td></tr>';
+        }
+
+        // ─── VIEW JOINED PLAYERS (IGN & UID) ───
+        function viewJoinedPlayers(tournamentId) {
+            const t = tournamentsData[tournamentId];
+            if (!t) return;
+
+            document.getElementById('playersModalTitle').textContent = `🎮 JOINED PLAYERS: ${t.name.toUpperCase()}`;
+            document.getElementById('playersModalSubtitle').textContent = `Mode: ${t.type.toUpperCase()} | Game: ${t.game} | Total Registered Players`;
+
+            const listContainer = document.getElementById('playersListContent');
+            const participants = t.participants || {};
+            const pKeys = Object.keys(participants);
+
+            if (pKeys.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: var(--text-sub);">
+                        <p style="font-size: 14px;">No players have joined this tournament yet.</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                let index = 1;
+
+                pKeys.forEach(uid => {
+                    const p = participants[uid];
+                    // Support multi-player squads or single player entry
+                    if (p.players && Array.isArray(p.players)) {
+                        p.players.forEach(pl => {
+                            html += createPlayerRow(index++, pl.inGameName || pl.ign || 'Gamer', pl.inGameUid || pl.uid || '-', p.name || 'Account');
+                        });
+                    } else {
+                        const ign = p.inGameName || p.ign || p.playerName || 'Gamer';
+                        const inGameUid = p.inGameUid || p.uid || p.playerUid || '-';
+                        const accName = p.name || p.userName || 'Account';
+                        html += createPlayerRow(index++, ign, inGameUid, accName);
+                    }
+                });
+
+                listContainer.innerHTML = html;
+            }
+
+            document.getElementById('playersModal').classList.remove('hidden');
+        }
+
+        function createPlayerRow(num, ign, inGameUid, accName) {
+            return `
+                <div class="player-item-row">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--gold); font-family: 'Orbitron', sans-serif; font-size: 13px; min-width: 24px;">#${num}</span>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="ign-badge">IGN: ${ign}</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-sub); margin-top: 3px;">
+                                Player: <strong style="color: #fff;">${accName}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 10px; color: var(--text-sub); display: block; text-transform: uppercase;">Game UID</span>
+                        <strong style="color: var(--gold); font-size: 13px; font-family: monospace;">${inGameUid}</strong>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closePlayersModal() {
+            document.getElementById('playersModal').classList.add('hidden');
         }
 
         function saveTournament() {
