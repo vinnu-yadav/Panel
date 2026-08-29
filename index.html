@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arena X - Admin & Esports Platform</title>
     
+    <meta name="description" content="Admin Dashboard for Arena X Esports Platform" />
     <meta property="og:title" content="Arena X Admin Panel" />
     <meta property="og:description" content="Admin Dashboard for Arena X Esports Platform" />
     <meta property="og:image" content="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" />
@@ -382,6 +383,90 @@
             font-weight: 800;
         }
 
+        /* ─── RANK BADGES ─── */
+        .rank-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .rank-bronze { color: #cd7f32; border-color: #cd7f32; background: rgba(205, 127, 50, 0.15); }
+        .rank-silver { color: #c0c0c0; border-color: #c0c0c0; background: rgba(192, 192, 192, 0.15); }
+        .rank-gold { color: #ffd700; border-color: #ffd700; background: rgba(255, 215, 0, 0.15); }
+        .rank-platinum { color: #00f3ff; border-color: #00f3ff; background: rgba(0, 243, 255, 0.15); }
+        .rank-diamond { color: #a855f7; border-color: #a855f7; background: rgba(168, 85, 247, 0.15); }
+        .rank-crown { color: #e94560; border-color: #e94560; background: rgba(233, 69, 96, 0.2); }
+        .rank-ace { color: #ff0055; border-color: #ff0055; background: rgba(255, 0, 85, 0.25); text-shadow: 0 0 6px #ff0055; }
+        .rank-conqueror { color: #ffaa00; border-color: #ffaa00; background: linear-gradient(45deg, rgba(255,170,0,0.3), rgba(233,69,96,0.3)); text-shadow: 0 0 8px #ffaa00; }
+
+        /* ─── RANK SELECT MODAL ─── */
+        #rankModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 7, 18, 0.88);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .rank-modal-card {
+            background: rgba(22, 22, 42, 0.98);
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 35px rgba(255, 215, 0, 0.35);
+            border-radius: 18px;
+            padding: 24px;
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+        }
+
+        .rank-modal-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--gold);
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+
+        .rank-modal-card p {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 18px;
+        }
+
+        .rank-option-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .rank-opt-btn {
+            padding: 10px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(10, 10, 20, 0.7);
+            color: #fff;
+            transition: 0.2s;
+            text-align: center;
+        }
+
+        .rank-opt-btn:hover, .rank-opt-btn.active {
+            border-color: var(--gold);
+            background: rgba(255, 215, 0, 0.18);
+            transform: scale(1.03);
+        }
+
         @media (max-width: 768px) {
             .data-table { display: block; overflow-x: auto; }
         }
@@ -413,6 +498,31 @@
         </div>
     </div>
 
+    <!-- ═══════════ RANK CHANGE MODAL ═══════════ -->
+    <div id="rankModal" class="hidden">
+        <div class="rank-modal-card">
+            <h3>⚡ ASSIGN PLAYER RANK</h3>
+            <p>Select a new competitive rank tier for <strong id="rankTargetUserName" style="color: #fff;">Gamer</strong></p>
+            <input type="hidden" id="rankTargetUserId" value="" />
+            
+            <div class="rank-option-grid">
+                <button class="rank-opt-btn rank-bronze" onclick="confirmRankChange('⚡ BRONZE')">⚡ BRONZE</button>
+                <button class="rank-opt-btn rank-silver" onclick="confirmRankChange('🥈 SILVER')">🥈 SILVER</button>
+                <button class="rank-opt-btn rank-gold" onclick="confirmRankChange('🥇 GOLD')">🥇 GOLD</button>
+                <button class="rank-opt-btn rank-platinum" onclick="confirmRankChange('💎 PLATINUM')">💎 PLATINUM</button>
+                <button class="rank-opt-btn rank-diamond" onclick="confirmRankChange('💠 DIAMOND')">💠 DIAMOND</button>
+                <button class="rank-opt-btn rank-crown" onclick="confirmRankChange('👑 CROWN')">👑 CROWN</button>
+                <button class="rank-opt-btn rank-ace" onclick="confirmRankChange('🔥 ACE')">🔥 ACE</button>
+                <button class="rank-opt-btn rank-conqueror" onclick="confirmRankChange('🏆 CONQUEROR')">🏆 CONQUEROR</button>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-action btn-secondary" style="flex: 1;" onclick="closeRankModal()">Cancel</button>
+                <button class="btn-action btn-gold" style="flex: 1;" onclick="customRankPrompt()">Custom Rank ✏️</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════ ADMIN DASHBOARD CONTENT ═══════════ -->
     <div class="topbar">
         <div class="logo">
@@ -423,7 +533,7 @@
             <button class="active" onclick="switchAdminTab('tournaments')" id="tabTournaments">🏆 Tournaments</button>
             <button onclick="switchAdminTab('banners')" id="tabBanners">📢 Announcement Banners</button>
             <button onclick="switchAdminTab('withdrawals')" id="tabWithdrawals">💸 Withdrawals</button>
-            <button onclick="switchAdminTab('users')" id="tabUsers">👥 Users</button>
+            <button onclick="switchAdminTab('users')" id="tabUsers">👥 Users & Ranks</button>
             <a href="index.html" class="switch-link" style="color: var(--cyber-cyan); border-color: var(--cyber-cyan);">🎮 View Player Platform ↗</a>
             <button onclick="adminLogout()" style="background: rgba(233, 69, 96, 0.2); color: var(--primary-neon); border-color: var(--primary-neon);">🚪 Logout</button>
         </div>
@@ -652,26 +762,27 @@
             </div>
         </div>
 
-        <!-- ═══════════ USERS SECTION ═══════════ -->
+        <!-- ═══════════ USERS & RANKS SECTION ═══════════ -->
         <div id="secUsers" class="hidden">
             <div class="card">
-                <h2>👥 Registered Players Database</h2>
+                <h2>👥 Registered Players Database & Rank Tiers</h2>
                 <div style="overflow-x: auto;">
                     <table class="data-table">
                         <thead>
                             <tr>
                                 <th>Player Name</th>
+                                <th>Rank Tier</th>
                                 <th>Email</th>
                                 <th>Instagram Link</th>
                                 <th>UPI ID</th>
                                 <th>Bonus</th>
                                 <th>Deposited</th>
                                 <th>Total Wallet</th>
-                                <th>Manage Funds</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
-                            <tr><td colspan="8" style="text-align: center; color: var(--text-sub);">Loading registered users...</td></tr>
+                            <tr><td colspan="9" style="text-align: center; color: var(--text-sub);">Loading registered users...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -698,36 +809,44 @@
         const db = firebase.database();
 
         let tournamentsData = {}, bannersData = {}, usersData = {}, withdrawalsData = {};
-        const ADMIN_EMAILS = ['vinayytmadduri@gmail.com', 'admin@arenax.com'];
 
-        // ─── AUTH STATE LISTENER ───
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // Check if admin email or admin role
-                const isEmailAdmin = ADMIN_EMAILS.includes((user.email || '').toLowerCase());
-                
-                db.ref('users/' + user.uid + '/role').once('value').then(snap => {
-                    const role = snap.val();
-                    if (isEmailAdmin || role === 'admin') {
-                        document.getElementById('authModal').classList.add('hidden');
-                        initAdminDataListeners();
-                    } else {
-                        document.getElementById('authError').textContent = 'Access Denied: Account ' + user.email + ' is not an authorized administrator.';
-                        document.getElementById('authError').style.display = 'block';
-                        document.getElementById('authModal').classList.remove('hidden');
-                        auth.signOut();
-                    }
-                }).catch(() => {
-                    if (isEmailAdmin) {
-                        document.getElementById('authModal').classList.add('hidden');
-                        initAdminDataListeners();
-                    }
-                });
+// ─── AUTH STATE LISTENER (PURE DATABASE ROLE CHECK) ───
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        try {
+            // 1. Fetch user data directly from Firebase Database: users/{uid}
+            const snap = await db.ref('users/' + user.uid).once('value');
+            const userData = snap.val() || {};
+            
+            // 2. Check if role is 'admin' (case-insensitive) or isAdmin is true
+            const role = String(userData.role || '').toLowerCase().trim();
+            const isAdmin = role === 'admin' || userData.isAdmin === true;
+
+            if (isAdmin) {
+                // Access Granted based purely on database record
+                document.getElementById('authModal').classList.add('hidden');
+                initAdminDataListeners();
             } else {
+                // Access Denied: not an admin in database
+                const errDiv = document.getElementById('authError');
+                errDiv.textContent = 'Access Denied: Account ' + user.email + ' does not have role="admin" in database.';
+                errDiv.style.display = 'block';
                 document.getElementById('authModal').classList.remove('hidden');
+                auth.signOut();
             }
-        });
-
+        } catch (err) {
+            console.error('Database role check failed:', err);
+            const errDiv = document.getElementById('authError');
+            errDiv.textContent = 'Access Denied: ' + err.message;
+            errDiv.style.display = 'block';
+            document.getElementById('authModal').classList.remove('hidden');
+            auth.signOut();
+        }
+    } else {
+        document.getElementById('authModal').classList.remove('hidden');
+    }
+});
+      
         function handleAdminLogin(e) {
             e.preventDefault();
             const email = document.getElementById('adminEmail').value.trim();
@@ -1119,7 +1238,19 @@
             }).then(() => alert('Withdrawal rejected. Refund scheduled.'));
         }
 
-        // ─── 4. USERS MANAGEMENT ───
+        // ─── 4. USERS & RANKS MANAGEMENT (REALTIME MULTI-FIELD SYNC) ───
+        function getRankClass(rank) {
+            const r = (rank || '').toLowerCase();
+            if (r.includes('conqueror')) return 'rank-conqueror';
+            if (r.includes('ace')) return 'rank-ace';
+            if (r.includes('crown')) return 'rank-crown';
+            if (r.includes('diamond')) return 'rank-diamond';
+            if (r.includes('platinum')) return 'rank-platinum';
+            if (r.includes('gold')) return 'rank-gold';
+            if (r.includes('silver')) return 'rank-silver';
+            return 'rank-bronze';
+        }
+
         function renderUsersTable() {
             const tbody = document.getElementById('usersTableBody');
             let html = '';
@@ -1128,10 +1259,22 @@
                 const u = usersData[uid];
                 const wallet = u.wallet || { bonus: 0, deposited: 0 };
                 const total = (wallet.bonus || 0) + (wallet.deposited || 0);
+                const currentRank = u.rank || u.rankTier || u.tier || (u.stats && u.stats.rank) || (u.profile && u.profile.rank) || '⚡ BRONZE';
+                const rankCls = getRankClass(currentRank);
 
                 html += `
                     <tr>
-                        <td><strong style="color: #fff;">${u.name || 'Gamer'}</strong></td>
+                        <td>
+                            <strong style="color: #fff; font-size: 13px;">${u.name || 'Gamer'}</strong>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span class="rank-badge ${rankCls}">${currentRank}</span>
+                                <button class="btn-sm btn-action btn-gold" style="padding: 3px 7px; font-size: 10px;" onclick="openRankModal('${uid}', '${encodeURIComponent(u.name || 'Gamer')}', '${encodeURIComponent(currentRank)}')">
+                                    ⚡ Change Rank
+                                </button>
+                            </div>
+                        </td>
                         <td style="font-size: 11px; color: var(--text-sub);">${u.email || '-'}</td>
                         <td>
                             ${u.instagramLink ? `<a href="${u.instagramLink}" target="_blank" class="insta-chip">Instagram ↗</a>` : '<span style="color:#64748b;">Not Linked</span>'}
@@ -1142,7 +1285,7 @@
                         <td><strong style="color: var(--primary-neon);">₹${total}</strong></td>
                         <td>
                             <div class="action-btns">
-                                <button class="btn-sm btn-action btn-green" onclick="adjustUserWallet('${uid}', 'add')">+ Add Cash</button>
+                                <button class="btn-sm btn-action btn-green" onclick="adjustUserWallet('${uid}', 'add')">+ Cash</button>
                                 <button class="btn-sm btn-action" style="background:#e11d48;" onclick="adjustUserWallet('${uid}', 'deduct')">- Deduct</button>
                             </div>
                         </td>
@@ -1150,7 +1293,57 @@
                 `;
             });
 
-            tbody.innerHTML = html || '<tr><td colspan="8" style="text-align: center; color: var(--text-sub);">No registered players</td></tr>';
+            tbody.innerHTML = html || '<tr><td colspan="9" style="text-align: center; color: var(--text-sub);">No registered players</td></tr>';
+        }
+
+        function openRankModal(uid, encodedName, encodedCurrentRank) {
+            const userName = decodeURIComponent(encodedName);
+            const currentRank = decodeURIComponent(encodedCurrentRank);
+
+            document.getElementById('rankTargetUserId').value = uid;
+            document.getElementById('rankTargetUserName').textContent = userName + ` (Current: ${currentRank})`;
+            document.getElementById('rankModal').classList.remove('hidden');
+        }
+
+        function closeRankModal() {
+            document.getElementById('rankModal').classList.add('hidden');
+        }
+
+        function confirmRankChange(newRank) {
+            const uid = document.getElementById('rankTargetUserId').value;
+            if (!uid) return;
+
+            const cleanRank = newRank.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+
+            const updates = {};
+            updates['users/' + uid + '/rank'] = newRank;
+            updates['users/' + uid + '/rankTier'] = newRank;
+            updates['users/' + uid + '/tier'] = newRank;
+            updates['users/' + uid + '/rankName'] = cleanRank;
+            updates['users/' + uid + '/playerRank'] = newRank;
+            updates['users/' + uid + '/currentRank'] = newRank;
+            updates['users/' + uid + '/stats/rank'] = newRank;
+            updates['users/' + uid + '/stats/tier'] = newRank;
+            updates['users/' + uid + '/profile/rank'] = newRank;
+            updates['users/' + uid + '/profile/tier'] = newRank;
+            updates['users/' + uid + '/rankUpdatedAt'] = Date.now();
+
+            db.ref().update(updates)
+                .then(() => {
+                    alert(`✅ Player rank successfully updated to ${newRank}!`);
+                    closeRankModal();
+                })
+                .catch(err => alert('Error updating rank: ' + err.message));
+        }
+
+        function customRankPrompt() {
+            const uid = document.getElementById('rankTargetUserId').value;
+            if (!uid) return;
+
+            const custom = prompt('Enter custom rank tier (e.g. 🏆 IMMORTAL, ⚡ VIP ELITE):', '👑 CROWN II');
+            if (custom && custom.trim()) {
+                confirmRankChange(custom.trim());
+            }
         }
 
         function adjustUserWallet(uid, action) {
