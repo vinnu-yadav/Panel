@@ -1475,6 +1475,7 @@
             }
         }
 
+        // ─── UNIFIED WALLET DEDUCTION ENGINE (BONUS + DEPOSITED AS ONE TOTAL POOL) ───
         function adjustUserWallet(uid, action) {
             const u = usersData[uid];
             if (!u) return;
@@ -1483,21 +1484,74 @@
             if (!amt || isNaN(amt) || amt <= 0) return;
 
             const curWallet = u.wallet || { bonus: 0, deposited: 0 };
-            const newDeposited = action === 'add' ? (curWallet.deposited || 0) + amt : Math.max(0, (curWallet.deposited || 0) - amt);
+            const curBonus = Number(curWallet.bonus || 0);
+            const curDeposited = Number(curWallet.deposited || 0);
+            const totalMoney = curBonus + curDeposited;
 
-            const txId = db.ref().push().key;
             const updates = {};
-            updates['users/' + uid + '/wallet/deposited'] = newDeposited;
-            updates['transactions/' + txId] = {
-                userId: uid,
-                userName: u.name || 'Gamer',
-                amount: action === 'add' ? amt : -amt,
-                type: 'admin_adjust',
-                description: `Admin manual wallet ${action === 'add' ? 'credit' : 'debit'} (₹${amt})`,
-                timestamp: Date.now()
-            };
+            const txId = db.ref().push().key;
 
-            db.ref().update(updates).then(() => alert(`Wallet updated for ${u.name}`));
+            if (action === 'add') {
+                const newDeposited = curDeposited + amt;
+                updates['users/' + uid + '/wallet/deposited'] = newDeposited;
+                updates['transactions/' + txId] = {
+                    userId: uid,
+                    userName: u.name || 'Gamer',
+                    amount: amt,
+                    type: 'admin_adjust',
+                    description: `Admin manual wallet credit (+₹${amt})`,
+                    timestamp: Date.now()
+                };
+                db.ref().update(updates).then(() => alert(`✅ Added ₹${amt} to ${u.name || 'player'}'s wallet!`));
+            } else if (action === 'deduct') {
+                if (totalMoney <= 0) {
+                    alert(`❌ Cannot deduct: Player ${u.name || 'player'} has ₹0 total balance (Deposited: ₹0, Bonus: ₹0).`);
+                    return;
+                }
+
+                let deductAmt = amt;
+                if (deductAmt > totalMoney) {
+                    const proceed = confirm(`⚠️ Requested deduction (₹${deductAmt}) exceeds total money (₹${totalMoney} = ₹${curDeposited} Deposited + ₹${curBonus} Bonus).\n\nDo you want to deduct all remaining ₹${totalMoney}?`);
+                    if (!proceed) return;
+                    deductAmt = totalMoney;
+                }
+
+                // Consider bonus and deposited as ONE unified total money:
+                // Reduce the deducted amount from total money by deducting deposited first, then bonus
+                let newDeposited = curDeposited;
+                let newBonus = curBonus;
+
+                if (curDeposited >= deductAmt) {
+                    newDeposited = curDeposited - deductAmt;
+                } else {
+                    const remainder = deductAmt - curDeposited;
+                    newDeposited = 0;
+                    newBonus = Math.max(0, curBonus - remainder);
+                }
+
+                const newTotal = newDeposited + newBonus;
+
+                updates['users/' + uid + '/wallet/deposited'] = newDeposited;
+                updates['users/' + uid + '/wallet/bonus'] = newBonus;
+                updates['transactions/' + txId] = {
+                    userId: uid,
+                    userName: u.name || 'Gamer',
+                    amount: -deductAmt,
+                    type: 'admin_reduce',
+                    description: `Admin unified deduction (-₹${deductAmt}). Total Money reduced from ₹${totalMoney} ➔ ₹${newTotal}`,
+                    breakdown: {
+                        depositedDeducted: curDeposited - newDeposited,
+                        bonusDeducted: curBonus - newBonus,
+                        previousTotal: totalMoney,
+                        newTotal: newTotal
+                    },
+                    timestamp: Date.now()
+                };
+
+                db.ref().update(updates).then(() => {
+                    alert(`✅ Successfully deducted ₹${deductAmt} from ${u.name || 'player'}'s total money!\n\n• Previous Total: ₹${totalMoney} (Dep: ₹${curDeposited}, Bonus: ₹${curBonus})\n• New Total: ₹${newTotal} (Dep: ₹${newDeposited}, Bonus: ₹${newBonus})`);
+                }).catch(err => alert('Error updating wallet: ' + err.message));
+            }
         }
     </script>
 </body>
