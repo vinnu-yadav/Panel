@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com; frame-src https://tournament-a7659.firebaseapp.com; object-src 'none'; base-uri 'self';" />
+    <title>Arena X – Staff Portal</title>
+
+    <meta property="og:title" content="Arena X – Staff Portal" />
+    <meta property="og:description" content="Official Staff & Referee Management Portal for Arena X Esports Tournaments" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" />
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@600;700;800&family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #06060f;
+            --card-bg: rgba(20, 20, 38, 0.88);
+            --card-border: rgba(0, 243, 255, 0.25);
+            --primary-neon: #e94560;
+            --cyber-cyan: #00f3ff;
+            --gold: #ffd700;
+            --green-live: #2ecc71;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --staff-purple: #a855f7;
+            --staff-gradient: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #00f3ff 100%);
+        }
+
+        html { font-size: 85%; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; font-weight: 700; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; overflow-x: hidden; position: relative; padding-bottom: 60px; }
+
+        .stage-lighting { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .spotlight-tl { position: absolute; top: -150px; left: -150px; width: 550px; height: 550px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 70%); filter: blur(80px); }
+        .spotlight-br { position: absolute; bottom: -150px; right: -150px; width: 550px; height: 550px; border-radius: 50%; background: radial-gradient(circle, rgba(0, 243, 255, 0.15) 0%, transparent 70%); filter: blur(90px); }
+        .app-layer { position: relative; z-index: 10; }
+
+        h1, h2, h3, .logo-text { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; text-transform: uppercase; font-weight: 800; }
+
+        .tilt-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: 0.25s ease;
+        }
+        .tilt-card:hover {
+            border-color: var(--cyber-cyan);
+            box-shadow: 0 12px 35px rgba(0, 243, 255, 0.2);
+        }
+
+        /* ─── TOPBAR ─── */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: rgba(15, 15, 30, 0.94);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid var(--cyber-cyan);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 243, 255, 0.15);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 19px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px var(--cyber-cyan);
+            cursor: pointer;
+        }
+        .logo img {
+            height: 34px;
+            filter: drop-shadow(0 0 8px var(--cyber-cyan));
+        }
+        .staff-badge {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(0, 243, 255, 0.2));
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--cyber-cyan);
+            font-weight: 800;
+            font-size: 11.5px;
+            color: var(--cyber-cyan);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .user-ctrl-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-logout {
+            background: rgba(233, 69, 96, 0.15);
+            border: 1px solid var(--primary-neon);
+            color: var(--primary-neon);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-logout:hover {
+            background: var(--primary-neon);
+            color: #fff;
+        }
+
+        /* ─── AUTH SCREEN ─── */
+        #authScreen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+            z-index: 20;
+        }
+        .auth-portal {
+            max-width: 420px;
+            width: 100%;
+            background: rgba(15, 15, 32, 0.95);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--cyber-cyan);
+            border-radius: 22px;
+            padding: 32px 26px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.25);
+        }
+        .auth-portal img {
+            width: 48px;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 0 10px var(--cyber-cyan));
+        }
+        .auth-role-tag {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid var(--staff-purple);
+            color: #c084fc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: 'Orbitron', sans-serif;
+            display: inline-block;
+            margin: 6px 0 16px;
+        }
+        .form-group {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 11.5px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(10, 10, 20, 0.85);
+            color: #fff;
+            border-radius: 10px;
+            outline: none;
+            font-size: 14px;
+            transition: 0.25s;
+        }
+        .form-group input:focus {
+            border-color: var(--cyber-cyan);
+            box-shadow: 0 0 14px rgba(0, 243, 255, 0.35);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #a855f7, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 800;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+            transition: 0.25s;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+        }
+
+        /* ─── CONTAINER & SECTIONS ─── */
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
+
+        .staff-banner {
+            background: linear-gradient(135deg, rgba(26, 20, 50, 0.9), rgba(15, 15, 30, 0.95));
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .staff-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .staff-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: var(--staff-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 18px;
+            color: var(--cyber-cyan);
+            border-left: 4px solid var(--cyber-cyan);
+            padding-left: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* ─── GAME & MODE GRIDS ─── */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .game-card {
+            padding: 24px 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+        }
+        .game-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 15, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        .game-icon img {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+        }
+
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            margin: 16px 0;
+        }
+        .type-card {
+            padding: 18px 14px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 170px;
+        }
+        .type-card:hover {
+            border-color: var(--cyber-cyan);
+            transform: translateY(-3px);
+        }
+
+        .mode-tourney-count {
+            margin-top: 10px;
+            background: rgba(10, 10, 24, 0.85);
+            border: 1px solid rgba(0, 243, 255, 0.35);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--cyber-cyan);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+        }
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green-live);
+            box-shadow: 0 0 8px var(--green-live);
+            display: inline-block;
+        }
+
+        .back-btn {
+            background: rgba(22, 22, 42, 0.8);
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+            padding: 7px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-bottom: 14px;
+            font-family: 'Orbitron', sans-serif;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: var(--cyber-cyan);
+            color: #000;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 8px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 16px;
+            color: var(--text-sub);
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 16px;
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            color: var(--cyber-cyan);
+            background: rgba(0, 243, 255, 0.15);
+            border-color: var(--cyber-cyan);
+        }
+
+        /* ─── TOURNAMENT CARDS (STAFF VIEW) ─── */
+        .tournament-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+            margin-top: 16px;
+        }
+        .tournament-card {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+        .card-header {
+            padding: 14px 16px;
+            background: rgba(22, 22, 45, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-body {
+            padding: 16px;
+            flex: 1;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .prize-pool {
+            color: var(--gold);
+            font-size: 15px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* ─── EXPOSED CREDENTIALS BOX FOR STAFF ─── */
+        .staff-credentials-box {
+            background: linear-gradient(145deg, rgba(12, 20, 38, 0.95), rgba(6, 12, 25, 0.95));
+            border: 1.5px solid var(--cyber-cyan);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin: 12px 0 10px;
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.15);
+        }
+        .staff-cred-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: var(--cyber-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .staff-cred-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .staff-cred-row:last-child {
+            border-bottom: none;
+        }
+        .staff-cred-val {
+            font-family: monospace;
+            font-weight: 800;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .copy-btn-mini {
+            background: rgba(0, 243, 255, 0.15);
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: 6px;
+        }
+        .copy-btn-mini:hover {
+            background: var(--cyber-cyan);
+            color: #000;
+        }
+
+        /* ─── SLOTS PROGRESS BAR ─── */
+        .slots-progressbar-wrap {
+            margin: 10px 0 8px;
+            background: rgba(10, 10, 25, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .slots-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        .slots-progress-label {
+            color: var(--text-sub);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .slots-progress-count {
+            color: var(--cyber-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 11px;
+        }
+        .slots-progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .slots-progress-bar {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--cyber-cyan), var(--staff-purple));
+            transition: width 0.4s ease;
+        }
+        .slots-progress-bar.full {
+            background: linear-gradient(90deg, #ff4b2b, var(--primary-neon));
+        }
+
+        .card-footer {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-view-players {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(168, 85, 247, 0.25));
+            color: #fff;
+            border: 1px solid var(--cyber-cyan);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.25s;
+        }
+        .btn-view-players:hover {
+            background: var(--cyber-cyan);
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.4);
+        }
+
+        /* ─── MODAL ROSTER / PLAYERS LIST ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 15, 0.9);
+            backdrop-filter: blur(14px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.25s;
+            padding: 16px;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: rgba(15, 15, 32, 0.98);
+            border: 2px solid var(--cyber-cyan);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 560px;
+            width: 100%;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.3);
+        }
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+        .players-scroll-wrap {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+            margin-bottom: 14px;
+        }
+        .player-row-item {
+            background: rgba(10, 10, 24, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .player-idx {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(0, 243, 255, 0.15);
+            color: var(--cyber-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .player-ign {
+            font-size: 13.5px;
+            color: #fff;
+            font-weight: 800;
+        }
+        .player-uid {
+            font-family: monospace;
+            font-size: 11.5px;
+            color: var(--gold);
+            letter-spacing: 0.5px;
+        }
+
+        /* ─── GRAPHICAL TOAST ─── */
+        .graphical-toast {
+            position: fixed;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-30px);
+            background: rgba(15, 15, 32, 0.95);
+            border: 1px solid var(--cyber-cyan);
+            border-radius: 12px;
+            padding: 10px 18px;
+            color: #fff;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 30px rgba(0, 243, 255, 0.35);
+            backdrop-filter: blur(16px);
+            z-index: 9999999;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .graphical-toast.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .hidden { display: none !important; }
+        .no-data { text-align: center; padding: 40px; color: var(--text-sub); }
+        .error-msg { color: var(--primary-neon); font-size: 12px; margin-top: 6px; }
+
+        @media (max-width: 600px) {
+            .type-grid { grid-template-columns: 1fr 1fr; }
+            .tournament-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage-lighting">
+        <div class="spotlight-tl"></div>
+        <div class="spotlight-br"></div>
+    </div>
+
+    <!-- ─── GRAPHICAL TOAST NOTIFICATION ─── -->
+    <div id="graphicalToast" class="graphical-toast">
+        <span id="toastIcon">✨</span>
+        <span id="toastMessage">Notification message</span>
+    </div>
+
+    <!-- ─── AUTH SCREEN (EMAIL & PASSWORD FOR STAFF / ADMIN) ─── -->
+    <div id="authScreen" class="app-layer">
+        <div class="auth-portal">
+            <img src="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" alt="Arena X" />
+            <h2>ARENA X STAFF</h2>
+            <div class="auth-role-tag">🛡️ MATCH REFEREE & STAFF GATEWAY</div>
+            <p style="color: var(--text-sub); font-size: 12px; margin-bottom: 18px;">
+                Authorized access only. Staff role required to view and manage tournament room credentials and player rosters.
+            </p>
+
+            <form id="staffLoginForm" onsubmit="handleStaffLogin(event)">
+                <div class="form-group">
+                    <label>Staff Email</label>
+                    <input type="email" id="staffEmail" placeholder="referee@arenax.com" required />
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="staffPassword" placeholder="••••••••" required autocomplete="current-password" />
+                </div>
+                <button type="submit" id="staffLoginBtn" class="btn-submit">
+                    AUTHENTICATE AS STAFF ➔
+                </button>
+                <div id="authErrorMsg" class="error-msg"></div>
+            </form>
+            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+                <a href="index.html" style="color: var(--cyber-cyan); text-decoration: none; font-size: 12px;">🎮 Return to Player App</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MAIN STAFF APPLICATION ─── -->
+    <div id="mainStaffApp" class="app-layer hidden">
+        <div class="topbar">
+            <div class="logo" onclick="backToGames()">
+                <img src="https://raw.githubusercontent.com/vinnu-yadav/Khiladi/refs/heads/main/arena.local.png" alt="Logo" />
+                <span class="logo-text">ARENA X STAFF</span>
+            </div>
+            <div class="user-ctrl-group">
+                <div class="staff-badge">
+                    <span>🛡️</span>
+                    <span id="topbarStaffRole">STAFF</span>
+                </div>
+                <button class="btn-logout" onclick="staffLogout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Staff Header Banner -->
+            <div class="staff-banner tilt-card">
+                <div class="staff-info">
+                    <div class="staff-avatar">🛡️</div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-sub); text-transform: uppercase;">Authenticated Staff Member</div>
+                        <div id="staffUserName" style="font-size: 16px; font-weight: 800; color: #fff; font-family: 'Orbitron', sans-serif;">Referee</div>
+                        <div id="staffUserEmail" style="font-size: 11px; color: var(--cyber-cyan); font-family: monospace;">staff@arenax.com</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 14px;">
+                    <div style="background: rgba(10, 10, 24, 0.7); padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
+                        <span style="font-size: 10px; color: var(--text-sub); display: block;">Active Matches</span>
+                        <span id="activeMatchesStat" style="font-size: 16px; color: var(--green-live); font-family: 'Orbitron', sans-serif;">0</span>
+                    </div>
+                    <div style="background: rgba(10, 10, 24, 0.7); padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
+                        <span style="font-size: 10px; color: var(--text-sub); display: block;">Total Players</span>
+                        <span id="totalPlayersStat" style="font-size: 16px; color: var(--gold); font-family: 'Orbitron', sans-serif;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games View -->
+            <div id="gamesView">
+                <h2 class="section-title">🎮 Select Game to Supervise</h2>
+                <div id="gamesList" class="game-grid"></div>
+            </div>
+
+            <!-- Mode View -->
+            <div id="typeView" class="hidden">
+                <button class="back-btn" onclick="backToGames()">← Back to Games</button>
+                <h2 class="section-title" id="selectedGameTitle">Select Mode</h2>
+                <div class="type-grid" id="typeGrid"></div>
+            </div>
+
+            <!-- Tournaments List View -->
+            <div id="tournamentsView" class="hidden">
+                <button class="back-btn" onclick="backToType()">← Back to Modes</button>
+                <h2 class="section-title" id="selectedTypeTitle">Tournaments</h2>
+                
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="filterTournaments(event, 'all')">All Matches</button>
+                    <button class="tab-btn" onclick="filterTournaments(event, 'upcoming')">Upcoming</button>
+                    <button class="tab-btn" onclick="filterTournaments(event, 'live')">Live Now</button>
+                    <button class="tab-btn" onclick="filterTournaments(event, 'completed')">Completed</button>
+                </div>
+
+                <div id="tournamentsList" class="tournament-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODAL: JOINED PLAYERS ROSTER (IGN & UID) ─── -->
+    <div id="playersModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3 id="playersModalTitle" style="color: var(--cyber-cyan); font-size: 16px;">👥 JOINED PLAYERS</h3>
+                        <p id="playersModalSubtitle" style="color: var(--text-sub); font-size: 11px; margin-top: 2px;">Tournament Player Roster</p>
+                    </div>
+                    <button onclick="closePlayersModal()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">✕</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button class="copy-btn-mini" style="flex: 1; padding: 6px;" onclick="copyAllIGNs()">📋 Copy All IGNs</button>
+                    <button class="copy-btn-mini" style="flex: 1; padding: 6px;" onclick="copyAllUIDs()">📋 Copy All UIDs</button>
+                </div>
+            </div>
+
+            <div class="players-scroll-wrap" id="playersListContent"></div>
+
+            <div>
+                <button class="btn-submit" style="background: rgba(255,255,255,0.1); color: #fff; box-shadow: none;" onclick="closePlayersModal()">
+                    Close Roster
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwqjgRRtZC9RJ34m-g5r0TBOx4G7AMDjc",
+            authDomain: "tournament-a7659.firebaseapp.com",
+            databaseURL: "https://tournament-a7659-default-rtdb.firebaseio.com",
+            projectId: "tournament-a7659",
+            storageBucket: "tournament-a7659.firebasestorage.app",
+            messagingSenderId: "458496922243",
+            appId: "1:458496922243:web:2aeb4b04bc9676e44a01b6",
+            measurementId: "G-FK9L8N9WSD"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // ─── SECURITY: sanitization helpers ───
+        // ANY value that came from the database (tournament names, room
+        // credentials, player IGNs/UIDs, account names, etc.) is untrusted
+        // input, because it was ultimately typed by a user or player.
+        // Every one of those values MUST pass through escapeHtml() before
+        // being placed into innerHTML. Never re-introduce raw ${...}
+        // interpolation of DB fields into innerHTML without it.
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[ch]));
+        }
+
+        let currentStaff = null;
+        let allTournaments = {};
+        let selectedGame = null;
+        let selectedType = null;
+        let activeFilter = 'all';
+        let currentModalPlayers = [];
+
+        // ─── TOAST ───
+        let toastTimer = null;
+        function showToast(msg, icon = '✨') {
+            const toast = document.getElementById('graphicalToast');
+            document.getElementById('toastMessage').textContent = msg;
+            document.getElementById('toastIcon').textContent = icon;
+            toast.classList.add('active');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('active');
+            }, 2500);
+        }
+
+        // ─── AUTH LISTENER ───
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const snap = await db.ref('users/' + user.uid).once('value');
+                    const data = snap.val() || {};
+                    const role = String(data.role || '').toLowerCase().trim();
+                    const isStaff = role === 'staff' || role === 'admin' || data.isAdmin === true || data.isStaff === true;
+
+                    if (isStaff) {
+                        currentStaff = { uid: user.uid, email: user.email, ...data };
+                        document.getElementById('authScreen').classList.add('hidden');
+                        document.getElementById('mainStaffApp').classList.remove('hidden');
+                        document.getElementById('staffUserName').textContent = data.name || user.displayName || 'Staff Officer';
+                        document.getElementById('staffUserEmail').textContent = user.email;
+                        document.getElementById('topbarStaffRole').textContent = (role === 'admin' ? 'ADMIN' : 'STAFF');
+
+                        initTournamentsListener();
+                    } else {
+                        document.getElementById('authErrorMsg').textContent = `Access Denied: Account (${user.email}) does not have role="staff" or role="admin" in database.`;
+                        auth.signOut();
+                    }
+                } catch (err) {
+                    console.error("Role verification error:", err);
+                    document.getElementById('authErrorMsg').textContent = 'Error checking staff role: ' + err.message;
+                    auth.signOut();
+                }
+            } else {
+                currentStaff = null;
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('mainStaffApp').classList.add('hidden');
+            }
+        });
+
+        // ─── STAFF LOGIN ───
+        function handleStaffLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('staffEmail').value.trim();
+            const pass = document.getElementById('staffPassword').value;
+            const btn = document.getElementById('staffLoginBtn');
+            const errDiv = document.getElementById('authErrorMsg');
+
+            btn.textContent = 'VERIFYING CREDENTIALS...';
+            btn.disabled = true;
+            errDiv.textContent = '';
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => {
+                    btn.textContent = 'AUTHENTICATE AS STAFF ➔';
+                    btn.disabled = false;
+                })
+                .catch(err => {
+                    btn.textContent = 'AUTHENTICATE AS STAFF ➔';
+                    btn.disabled = false;
+                    errDiv.textContent = 'Login Failed: ' + err.message;
+                });
+        }
+
+        function staffLogout() {
+            if (confirm('Log out from Staff Portal?')) {
+                auth.signOut().then(() => location.reload());
+            }
+        }
+
+        // ─── LISTEN TO TOURNAMENTS ───
+        function initTournamentsListener() {
+            db.ref('tournaments').on('value', snap => {
+                allTournaments = snap.val() || {};
+                
+                // Calculate quick stats
+                let activeCount = 0;
+                let playerCount = 0;
+                Object.values(allTournaments).forEach(t => {
+                    if (t.status !== 'completed') activeCount++;
+                    playerCount += getJoinedCount(t);
+                });
+                document.getElementById('activeMatchesStat').textContent = activeCount;
+                document.getElementById('totalPlayersStat').textContent = playerCount;
+
+                renderGames();
+                if (selectedGame && !selectedType) selectGame(selectedGame);
+                if (selectedGame && selectedType) renderTournaments(activeFilter);
+            });
+        }
+
+        function getJoinedCount(t) {
+            if (!t || !t.participants) return 0;
+            let count = 0;
+            Object.values(t.participants).forEach(p => {
+                if (p.players && Array.isArray(p.players)) count += p.players.length;
+                else count += 1;
+            });
+            return count;
+        }
+
+        const GAMES = [
+            { id: 'Free Fire', name: 'Free Fire', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSnNZ6jiRHQnOPNwcQSbFWj4DCJa3VL7i-8MGUzE8eTMg&s=10' },
+            { id: 'BGMI', name: 'BGMI', icon: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDvqr-wMyGMoelKgCCF9iCktLlrsNSstme8YCLgaeh8oJdzlTWd2jTkNZtCEfKFPuXB2grbmJCSai_CEDmy3Hq84bZkWvWq20zmUDjRALR&s=10' }
+        ];
+
+        function renderGames() {
+            let html = '';
+            GAMES.forEach(g => {
+                const count = Object.values(allTournaments).filter(t => t.game === g.id && t.status !== 'completed').length;
+                html += `
+                    <div class="game-card tilt-card" onclick="selectGame('${g.id}')">
+                        <div class="game-icon"><img src="${g.icon}" alt="${g.name}" /></div>
+                        <h3>${g.name}</h3>
+                        <p style="color:var(--cyber-cyan); font-size:12px; margin-top:4px;">${count} Active Matches</p>
+                    </div>
+                `;
+            });
+            document.getElementById('gamesList').innerHTML = html;
+        }
+
+        function selectGame(gameId) {
+            selectedGame = gameId;
+            selectedType = null;
+            document.getElementById('gamesView').classList.add('hidden');
+            document.getElementById('typeView').classList.remove('hidden');
+            document.getElementById('tournamentsView').classList.add('hidden');
+            document.getElementById('selectedGameTitle').textContent = gameId + ' — Select Mode';
+
+            const modes = gameId === 'Free Fire' ? [
+                { id: '1v1', name: '1v1 Tournament', desc: '2 Players Max', fallbackEmoji: '⚔️', color: 'var(--primary-neon)' },
+                { id: '2v2', name: '2v2 Tournaments', desc: '4 Players Max', fallbackEmoji: '👥', color: 'var(--cyber-cyan)' },
+                { id: '3v3', name: '3v3 Tournament', desc: '6 Players Max', fallbackEmoji: '🛡️', color: 'var(--gold)' },
+                { id: '4v4', name: '4v4 Clash Squad', desc: '8 Players Max', fallbackEmoji: '💥', color: '#af7ac5' },
+                { id: '5v5', name: '5v5 Tournament', desc: '10 Players Max', fallbackEmoji: '⚡', color: 'var(--green-live)' },
+                { id: '6v6', name: '6v6 Mega Clash', desc: '12 Players Max', fallbackEmoji: '🔥', color: '#e67e22' },
+                { id: 'solo', name: 'Solo BR', desc: 'Survival Mode', fallbackEmoji: '🎯', color: '#3498db' },
+                { id: 'squad', name: 'Squad BR', desc: '4-Player Squad', fallbackEmoji: '🏆', color: '#e67e22' }
+            ] : [
+                { id: 'tdm', name: 'TDM 4v4', desc: '8 Players Max', fallbackEmoji: '🔫', color: '#af7ac5' },
+                { id: 'solo', name: 'Solo Classic', desc: '100 Players BR', fallbackEmoji: '🎯', color: 'var(--cyber-cyan)' },
+                { id: 'squad', name: 'Squad Classic', desc: 'Squad Warfare', fallbackEmoji: '👥', color: 'var(--primary-neon)' }
+            ];
+
+            let html = '';
+            modes.forEach(m => {
+                const count = Object.values(allTournaments).filter(t => 
+                    t && t.game === gameId && 
+                    (t.type || '').toLowerCase() === m.id.toLowerCase() &&
+                    t.status !== 'completed'
+                ).length;
+
+                html += `
+                    <div class="type-card tilt-card" onclick="selectType('${m.id}')">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="width: 50px; height: 50px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; background: rgba(15, 15, 30, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); font-size: 24px;">
+                                <span>${m.fallbackEmoji}</span>
+                            </div>
+                            <h3 style="color:${m.color}; font-size: 15px; margin-bottom: 2px;">${m.name}</h3>
+                            <p style="color:var(--text-sub); font-size:11px;">${m.desc}</p>
+                        </div>
+                        <div class="mode-tourney-count">
+                            <span class="live-dot"></span>${count} Active Match${count !== 1 ? 'es' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('typeGrid').innerHTML = html;
+        }
+
+        function selectType(type) {
+            selectedType = type;
+            document.getElementById('typeView').classList.add('hidden');
+            document.getElementById('tournamentsView').classList.remove('hidden');
+            document.getElementById('selectedTypeTitle').textContent = `${selectedGame} — ${type.toUpperCase()} Tournaments`;
+            renderTournaments(activeFilter);
+        }
+
+        function backToGames() {
+            selectedGame = null;
+            selectedType = null;
+            document.getElementById('gamesView').classList.remove('hidden');
+            document.getElementById('typeView').classList.add('hidden');
+            document.getElementById('tournamentsView').classList.add('hidden');
+        }
+
+        function backToType() {
+            document.getElementById('tournamentsView').classList.add('hidden');
+            document.getElementById('typeView').classList.remove('hidden');
+            if (selectedGame) selectGame(selectedGame);
+        }
+
+        function filterTournaments(ev, filter) {
+            activeFilter = filter;
+            document.querySelectorAll('#tournamentsView .tab-btn').forEach(b => b.classList.remove('active'));
+            ev.target.classList.add('active');
+            renderTournaments(filter);
+        }
+
+        // ─── RENDER TOURNAMENTS (EXPOSED CREDENTIALS + PLAYERS TO STAFF) ───
+        function renderTournaments(filter) {
+            const container = document.getElementById('tournamentsList');
+            let html = '';
+            const list = Object.keys(allTournaments).map(id => ({ id, ...allTournaments[id] })).filter(t => {
+                if (t.game !== selectedGame || (t.type || '').toLowerCase() !== selectedType.toLowerCase()) return false;
+                if (filter !== 'all' && t.status !== filter) return false;
+                return true;
+            });
+
+            list.forEach(t => {
+                const joinedCount = getJoinedCount(t);
+                const maxSlots = t.maxPlayers || 100;
+                const progressPct = Math.min(100, Math.round((joinedCount / maxSlots) * 100));
+                const isFull = joinedCount >= maxSlots;
+                
+                const roomUidRaw = t.roomUid && String(t.roomUid).trim() !== '' ? t.roomUid : 'Not set yet';
+                const roomPassRaw = t.roomPassword && String(t.roomPassword).trim() !== '' ? t.roomPassword : 'Not set yet';
+                const hasRoomUid = roomUidRaw !== 'Not set yet';
+                const hasRoomPass = roomPassRaw !== 'Not set yet';
+
+                // Only the Firebase-generated tournament id (t.id, safe
+                // alphanumeric key) is embedded in onclick attributes below.
+                // Free-text values (name, room creds) are looked up from
+                // allTournaments inside the handler instead of being
+                // string-interpolated into an attribute, which is what
+                // made this exploitable before.
+                html += `
+                    <div class="tournament-card tilt-card">
+                        <div class="card-header">
+                            <h3>${escapeHtml(t.name)}</h3>
+                            <span style="color:var(--cyber-cyan); font-size:11px;">${escapeHtml((t.status || 'UPCOMING').toUpperCase())}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-row"><span>Prize Pool</span><span class="prize-pool">₹${escapeHtml(t.prizePool || 0)}</span></div>
+                            <div class="info-row"><span>Entry Fee</span><span>₹${escapeHtml(t.entryFee || 0)}</span></div>
+                            <div class="info-row"><span>Date & Time</span><span>${escapeHtml(t.dateTime || 'TBD')}</span></div>
+
+                            <!-- SLOTS PROGRESS -->
+                            <div class="slots-progressbar-wrap">
+                                <div class="slots-progress-header">
+                                    <span class="slots-progress-label">👥 Joined Roster</span>
+                                    <span class="slots-progress-count">${joinedCount} / ${maxSlots} (${progressPct}%)</span>
+                                </div>
+                                <div class="slots-progress-track">
+                                    <div class="slots-progress-bar ${isFull ? 'full' : ''}" style="width: ${progressPct}%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- ROOM CREDENTIALS FOR STAFF -->
+                            <div class="staff-credentials-box">
+                                <div class="staff-cred-header">
+                                    <span>🔑 Room Credentials (Exposed to Staff)</span>
+                                    <button class="copy-btn-mini" onclick="copyBothCreds('${escapeHtml(t.id)}')">Copy Both</button>
+                                </div>
+                                <div class="staff-cred-row">
+                                    <span>Room ID:</span>
+                                    <div>
+                                        <span class="staff-cred-val">${escapeHtml(roomUidRaw)}</span>
+                                        ${hasRoomUid ? `<button class="copy-btn-mini" onclick="copyRoomField('${escapeHtml(t.id)}', 'roomUid', 'Room ID copied!')">Copy</button>` : ''}
+                                    </div>
+                                </div>
+                                <div class="staff-cred-row">
+                                    <span>Password:</span>
+                                    <div>
+                                        <span class="staff-cred-val">${escapeHtml(roomPassRaw)}</span>
+                                        ${hasRoomPass ? `<button class="copy-btn-mini" onclick="copyRoomField('${escapeHtml(t.id)}', 'roomPassword', 'Password copied!')">Copy</button>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <button class="btn-view-players" onclick="openPlayersModal('${escapeHtml(t.id)}')">
+                                👥 View Joined Players (${joinedCount})
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<div class="no-data">No tournaments found for this mode.</div>';
+        }
+
+        function copyText(txt, successMsg) {
+            navigator.clipboard.writeText(txt);
+            showToast(successMsg || 'Copied!', '📋');
+        }
+
+        // These read the live value out of allTournaments (in-memory data,
+        // never re-parsed as HTML/JS) rather than having free-text room
+        // credentials embedded directly inside an onclick="" attribute.
+        function copyRoomField(tId, field, successMsg) {
+            const t = allTournaments[tId];
+            if (!t) return;
+            copyText(t[field] || '', successMsg);
+        }
+
+        function copyBothCreds(tId) {
+            const t = allTournaments[tId];
+            if (!t) return;
+            const combined = `Room ID: ${t.roomUid || 'Not set yet'} | Password: ${t.roomPassword || 'Not set yet'}`;
+            navigator.clipboard.writeText(combined);
+            showToast('Room ID & Password copied!', '🔑');
+        }
+
+        // ─── VIEW JOINED PLAYERS MODAL ───
+        function openPlayersModal(tId) {
+            const t = allTournaments[tId];
+            if (!t) return;
+
+            // textContent (not innerHTML) is used here, so no HTML escaping
+            // is required — the browser never parses this as markup.
+            document.getElementById('playersModalTitle').textContent = `👥 ${(t.name || '').toUpperCase()}`;
+            document.getElementById('playersModalSubtitle').textContent = `Mode: ${(t.type || '').toUpperCase()} | Game: ${t.game || ''} | Registered Roster`;
+
+            const listContainer = document.getElementById('playersListContent');
+            const participants = t.participants || {};
+            const pKeys = Object.keys(participants);
+
+            currentModalPlayers = [];
+
+            if (pKeys.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; padding: 35px 20px; color: var(--text-sub);">
+                        <p style="font-size: 14px;">No players have joined this tournament yet.</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                let index = 1;
+
+                pKeys.forEach(uid => {
+                    const p = participants[uid];
+                    if (p.players && Array.isArray(p.players)) {
+                        p.players.forEach(pl => {
+                            const ign = pl.inGameName || pl.ign || 'Gamer';
+                            const inGameUid = pl.inGameUid || pl.uid || '-';
+                            const playerIdx = currentModalPlayers.length;
+                            currentModalPlayers.push({ ign, inGameUid });
+                            html += createPlayerRowHtml(index++, playerIdx, ign, inGameUid, p.name || 'Account');
+                        });
+                    } else {
+                        const ign = p.inGameName || p.ign || p.playerName || 'Gamer';
+                        const inGameUid = p.inGameUid || p.uid || p.playerUid || '-';
+                        const playerIdx = currentModalPlayers.length;
+                        currentModalPlayers.push({ ign, inGameUid });
+                        html += createPlayerRowHtml(index++, playerIdx, ign, inGameUid, p.name || 'Account');
+                    }
+                });
+
+                listContainer.innerHTML = html;
+            }
+
+            document.getElementById('playersModal').classList.add('active');
+        }
+
+        // Only the numeric playerIdx (never free text) is embedded in the
+        // onclick attribute; the actual UID is read back out of
+        // currentModalPlayers inside copyPlayerUid(), so a malicious IGN or
+        // UID string can never break out of an HTML attribute or inject JS.
+        function createPlayerRowHtml(num, playerIdx, ign, inGameUid, accName) {
+            return `
+                <div class="player-row-item">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="player-idx">#${num}</span>
+                        <div>
+                            <div class="player-ign">${escapeHtml(ign)}</div>
+                            <div style="font-size: 10px; color: var(--text-sub);">Account: ${escapeHtml(accName)}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="player-uid">UID: ${escapeHtml(inGameUid)}</span>
+                        <button class="copy-btn-mini" onclick="copyPlayerUid(${playerIdx})">Copy</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function copyPlayerUid(playerIdx) {
+            const p = currentModalPlayers[playerIdx];
+            if (!p) return;
+            copyText(p.inGameUid, 'UID copied!');
+        }
+
+        function copyAllIGNs() {
+            if (currentModalPlayers.length === 0) return;
+            const igns = currentModalPlayers.map(p => p.ign).join(', ');
+            navigator.clipboard.writeText(igns);
+            showToast('All player IGNs copied!', '📋');
+        }
+
+        function copyAllUIDs() {
+            if (currentModalPlayers.length === 0) return;
+            const uids = currentModalPlayers.map(p => p.inGameUid).join(', ');
+            navigator.clipboard.writeText(uids);
+            showToast('All player UIDs copied!', '📋');
+        }
+
+        function closePlayersModal() {
+            document.getElementById('playersModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
